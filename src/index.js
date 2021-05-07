@@ -1,9 +1,9 @@
 //yarn add express, add middlewares, rotas etc
 //yarn add uuidv4 universal unique id.
 const express = require('express');
-const { uuid } = require('uuidv4');
+const { uuid, isUuid } = require('uuidv4');
 /*
-HTTP  PRINCIPAL METHODS:
+HTTP  MAIN METHODS:
 GET : Buscar informações do backend.
 POST : Criar uma informação no back-end
 PUT : Alterar uma informação no back-end (pode ser patch também para atualizar
@@ -16,9 +16,35 @@ DELETE: Quando formos deletar uma informação do back-end
   Route params: Identificar recursos quando atualizar ou deletar, ID.
   Request body: Conteúdo na hora de criar ou editar um recurso.(JSON)
 */
+/* MIDDLEWARE
+  Interceptador de requisições, ele pode interomper uma requisição,
+  alterar dados da requisição.
+*/
 const app = express();
 app.use(express.json());
 const projects = [];
+//O middleware será configurado para ser disparado em todas as requisições.
+function logRequests(request, response,next ){
+  const {method, url}  = request;
+  const logLabel = `[{${method.toUpperCase()}}] ${url}`; 
+  console.log(logLabel);
+  console.time(logLabel);
+   next();
+  console.timeEnd(logLabel);
+} 
+function validateProjectId(request,response,next){
+  const {id} = request.params;
+
+  if(!isUuid(id)){
+    return response.status(400).json({ Error: 'Invalid project ID.'});
+    //Nesse return sem o next o middleware interrompe a requisição.
+  }
+  return next();
+}
+//Os middleware podem ser passados como parametros para funcoes, e quantos 
+// quiser.
+app.use(logRequests);
+app.use('/projects/:id',validateProjectId);
 //Determinadoo a rota e seu retorno. response da a resposta para o frontend 
 app.get('/projects', (request, response ) => {
  const { title } =  request.query;
